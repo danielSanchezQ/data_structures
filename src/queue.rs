@@ -3,65 +3,56 @@ use std::collections::vec_deque::VecDeque;
 type Queue<T> = VecDeque<T>;
 
 pub fn simulate_package_processing(buffer_size: usize, packages: &[(usize, usize)]) -> Vec<isize> {
-    let mut buff: Queue<(usize, usize)> = Queue::with_capacity(buffer_size);
+    let mut buff: Queue<(usize, usize, usize)> = Queue::with_capacity(buffer_size);
     let mut results = vec![0; packages.len()];
-    let mut t = 0usize;
-    let mut current: Option<(usize, usize)> = None;
+    let mut t = 0;
     let mut packages_index = 0;
+
     loop {
         if buff.is_empty() && packages_index >= packages.len() {
             break;
         }
-        current = match current {
-            Some((_, 0)) => None,
-            otherwise => otherwise,
-        };
-        'push_to_buffer: loop {
-            if packages_index < packages.len() {
-                let (package_t, package_cost) = packages[packages_index];
-                if package_t > t {
-                    break 'push_to_buffer;
+        // removed 0 from buff
+        'process_zero: while !buff.is_empty() {
+            match buff.front() {
+                Some((i, 0, original_cost)) => {
+                    results[*i] = (t - original_cost) as isize;
+                    buff.pop_front();
                 }
-                let diff = if current.is_none() { 0 } else { 1 };
-                if buff.len() < buffer_size && current.is_none() && package_cost == 0 {
-                    results[packages_index] = t as isize;
-                } else if buff.len() < buffer_size - diff {
-                    buff.push_back((packages_index, package_cost));
-                } else {
-                    results[packages_index] = -1;
+                _ => {
+                    break 'process_zero;
                 }
-                packages_index += 1;
-            } else {
-                break 'push_to_buffer;
             }
         }
-        'process: loop {
-            if buff.is_empty() && current.is_none() {
-                break 'process;
+
+        // add items to buff
+        'add_items: loop {
+            if packages_index >= packages.len() {
+                break 'add_items;
             }
-            match current {
-                None => {
-                    current = buff.pop_front();
-                    match current {
-                        None => {}
-                        Some((i, _)) => {
-                            results[i] = t as isize;
-                        }
-                    }
-                }
-                Some((current_i, 0)) => {
-                    results[current_i] = t as isize;
-                    current = buff.pop_front();
-                }
-                Some((current_i, current_cost)) => {
-                    let new_cost = current_cost - 1;
-                    current = Some((current_i, new_cost));
-                    break 'process;
-                }
+            let (t1, cost) = packages[packages_index];
+            if t1 > t {
+                break 'add_items;
+            }
+            if buff.is_empty() && cost == 0 {
+                results[packages_index] = t as isize;
+            } else if buff.len() >= buffer_size {
+                results[packages_index] = -1;
+            } else {
+                buff.push_back((packages_index, cost, cost));
+            }
+            packages_index += 1;
+        }
+
+        // process las package
+        if let Some(item) = buff.front_mut() {
+            if item.1 > 0 {
+                item.1 -= 1;
             }
         }
         t += 1;
     }
+
     results
 }
 
