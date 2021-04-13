@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, vec_deque::VecDeque};
 use std::fmt::Display;
 use std::str::FromStr;
 
@@ -104,9 +104,39 @@ where
     }
 }
 
+pub fn maximum_sliding_window(window_size: usize, elements: &[usize]) -> Vec<usize> {
+    let mut stack: VecDeque<usize> = VecDeque::new();
+    let mut res = Vec::new();
+
+    for i in 0..window_size.min(elements.len()) {
+        while !stack.is_empty() && elements[i] >= elements[*stack.back().unwrap()] {
+            stack.pop_back();
+        }
+        stack.push_back(i);
+    }
+
+    for i in window_size..elements.len() {
+        res.push(elements[*stack.front().unwrap()]);
+
+        while !stack.is_empty() && *stack.front().unwrap() <= i - window_size {
+            stack.pop_front();
+        }
+
+        while !stack.is_empty() && elements[i] >= elements[*stack.back().unwrap()] {
+            stack.pop_back();
+        }
+
+        stack.push_back(i);
+    }
+
+    res.push(elements[*stack.front().unwrap()]);
+
+    res
+}
+
 #[cfg(test)]
 mod test {
-    use crate::stack::{check_parenthesis, compute_max_stack_input, StackCommand};
+    use crate::stack::{check_parenthesis, compute_max_stack_input, StackCommand, maximum_sliding_window};
     use std::collections::HashMap;
 
     #[test]
@@ -132,5 +162,12 @@ mod test {
             StackCommand::Max,
         ];
         compute_max_stack_input(&commands);
+    }
+
+    #[test]
+    fn test_max_sliding_window_example() {
+        let elements = [2, 7, 3, 1, 5, 2, 6, 2];
+        let expect = vec![7, 7, 5, 6, 6];
+        assert_eq!(maximum_sliding_window(4, &elements), expect);
     }
 }
