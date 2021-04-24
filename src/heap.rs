@@ -20,6 +20,22 @@ impl<T: PartialOrd + Clone> Heap<T> {
         }
     }
 
+    pub fn from_slice(slice: &[T], max: bool) -> Self {
+        let cmp_f = Box::new(if max {
+            std::cmp::PartialOrd::gt
+        } else {
+            std::cmp::PartialOrd::lt
+        });
+        let mut ret = Self {
+            nodes: slice.to_vec(),
+            cmp_f,
+        };
+        for i in 0..slice.len() / 2 {
+            ret.swift_down(i);
+        }
+        ret
+    }
+
     pub fn parent_index(i: usize) -> usize {
         i / 2
     }
