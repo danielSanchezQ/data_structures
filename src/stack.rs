@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, vec_deque::VecDeque};
+use std::collections::{vec_deque::VecDeque, HashMap, HashSet};
 use std::fmt::Display;
 use std::str::FromStr;
 
@@ -136,7 +136,9 @@ pub fn maximum_sliding_window(window_size: usize, elements: &[usize]) -> Vec<usi
 
 #[cfg(test)]
 mod test {
-    use crate::stack::{check_parenthesis, compute_max_stack_input, StackCommand, maximum_sliding_window};
+    use crate::stack::{
+        check_parenthesis, compute_max_stack_input, maximum_sliding_window, StackCommand,
+    };
     use std::collections::HashMap;
 
     #[test]
