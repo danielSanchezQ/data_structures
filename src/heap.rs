@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-
 struct Heap<T: PartialOrd + Clone> {
     nodes: Vec<T>,
     cmp_f: Box<fn(&T, &T) -> bool>,
@@ -30,7 +28,7 @@ impl<T: PartialOrd + Clone> Heap<T> {
             nodes: slice.to_vec(),
             cmp_f,
         };
-        for i in 0..slice.len() / 2 {
+        for i in (0..=slice.len() / 2).rev() {
             ret.swift_down(i);
         }
         ret
@@ -52,27 +50,29 @@ impl<T: PartialOrd + Clone> Heap<T> {
         &self.nodes[i]
     }
 
-    pub fn swift_up(&mut self, i: usize) {
+    pub fn swift_up(&mut self, mut i: usize) {
         let cmp_f = self.cmp_f.as_ref();
-        let mut parent = Self::parent_index(i);
-        while i > 0 && cmp_f(self.get(i), self.get(i)) {
-            self.nodes.swap(parent, i);
+        let mut parent_index = Self::parent_index(i);
+        while i > 0 && !cmp_f(self.get(parent_index), self.get(i)) {
+            self.nodes.swap(parent_index, i);
+            i = parent_index;
+            parent_index = Self::parent_index(i);
         }
     }
 
     pub fn swift_down(&mut self, mut i: usize) {
         let cmp_f = self.cmp_f.as_ref();
-
+        let len = self.nodes.len();
         loop {
             let mut max_index = i;
 
             let left_index = Self::left_index(i);
-            if !cmp_f(self.get(left_index), self.get(max_index)) {
+            if left_index < len && cmp_f(self.get(left_index), self.get(max_index)) {
                 max_index = left_index;
             }
 
             let right_index = Self::right_index(i);
-            if !cmp_f(self.get(left_index), self.get(max_index)) {
+            if right_index < len && cmp_f(self.get(right_index), self.get(max_index)) {
                 max_index = right_index;
             }
 
@@ -115,5 +115,19 @@ impl<T: PartialOrd + Clone> Heap<T> {
         *self.nodes.get_mut(i).unwrap() = self.nodes[0].clone();
         self.swift_up(i);
         self.extract_root();
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::heap::Heap;
+
+    #[test]
+    fn test_sort_array() {
+        let s = [1, 2, 3, 4, 5];
+        let expected = [5, 4, 3, 2, 1].to_vec();
+        let mut heap = Heap::<usize>::from_slice(&s, true);
+        let res: Vec<usize> = (0..5).map(|_| heap.extract_root()).collect();
+        assert_eq!(&expected, &res);
     }
 }
